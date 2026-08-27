@@ -1,0 +1,24 @@
+@{ ViewData["Title"] = "Phễu bán hàng"; var d = (ShowDash)ViewBag.Dash;
+   var colors = new[] { "#94a3b8", "#0ea5e9", "#0369a1", "#075985", "#f59e0b", "#16a34a", "#dc2626" };
+   var maxCnt = d.Funnel.Where(f => f.Stage != LeadStage.Lost).Select(f => f.Count).DefaultIfEmpty(1).Max(); if (maxCnt == 0) maxCnt = 1; }
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3"><div class="card"><div class="card-body"><div class="text-muted small">Tổng lead</div><div class="stat-num">@d.Leads</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card"><div class="card-body"><div class="text-muted small">Đang theo đuổi</div><div class="stat-num" style="color:#0369a1">@d.Active</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card"><div class="card-body"><div class="text-muted small">Lái thử 7 ngày</div><div class="stat-num">@d.TestDrivesWeek</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card"><div class="card-body"><div class="text-muted small">Doanh thu tháng</div><div class="stat-num" style="font-size:18px">@d.RevenueMonth.ToString("N0")đ</div></div></div></div>
+</div>
+<div class="card"><div class="card-body">
+    <h6 class="fw-bold mb-3">Phễu chuyển đổi</h6>
+    @foreach (var (stage, cnt) in d.Funnel)
+    {
+        if (stage == LeadStage.Lost) { continue; }
+        var (txt, _) = Ui.Stage(stage);
+        var w = 25 + (int)(cnt * 75.0 / maxCnt);
+        <div class="d-flex align-items-center mb-2">
+            <div style="width:110px" class="small text-muted">@txt</div>
+            <div class="flex-fill"><a href="/Lead?stage=@((int)stage)" class="funnel-bar text-decoration-none" style="width:@w%;background:@colors[(int)stage]">@cnt</a></div>
+        </div>
+    }
+    @{ var lost = d.Funnel.First(f => f.Stage == LeadStage.Lost).Count; }
+    <div class="text-muted small mt-2">Mất khách: <a href="/Lead?stage=6" class="text-danger">@lost</a> · <a href="/Lead/Create" class="ms-2">+ Thêm lead</a></div>
+</div></div>

@@ -1,0 +1,25 @@
+@model List<Deal>
+@{ ViewData["Title"] = "Thương vụ"; var cur = (DealStatus?)ViewBag.Status; }
+<div class="card"><div class="card-body">
+    <div class="btn-group btn-group-sm mb-3">
+        <a href="/Deal" class="btn @(cur==null?"btn-primary":"btn-outline-primary")">Tất cả</a>
+        <a href="/Deal?status=0" class="btn @(cur==DealStatus.Quoted?"btn-primary":"btn-outline-primary")">Báo giá</a>
+        <a href="/Deal?status=1" class="btn @(cur==DealStatus.Deposited?"btn-primary":"btn-outline-primary")">Đã cọc</a>
+        <a href="/Deal?status=2" class="btn @(cur==DealStatus.Delivered?"btn-primary":"btn-outline-primary")">Đã giao</a>
+    </div>
+    <table class="table table-hover align-middle">
+        <thead><tr><th>Mã</th><th>Khách hàng</th><th>Xe</th><th class="text-end">Giá bán</th><th class="text-end">Cọc</th><th>Trạng thái</th></tr></thead>
+        <tbody>
+        @foreach (var d in Model)
+        {
+            var (txt, css) = Ui.Deal(d.Status);
+            <tr style="cursor:pointer" onclick="location.href='/Lead/Detail/@d.LeadId'">
+                <td class="fw-semibold">@d.Code</td><td>@d.Lead.Name</td><td class="small">@d.Model.Name</td>
+                <td class="text-end">@d.FinalPrice.ToString("N0")</td><td class="text-end">@d.DepositAmount.ToString("N0")</td>
+                <td><span class="badge bg-@css">@txt</span></td>
+            </tr>
+        }
+        @if (Model.Count == 0) { <tr><td colspan="6" class="text-center text-muted py-4">Chưa có thương vụ.</td></tr> }
+        </tbody>
+    </table>
+</div></div>

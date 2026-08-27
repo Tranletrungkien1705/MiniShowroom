@@ -1,0 +1,23 @@
+@model List<VehicleModel>
+@{ ViewData["Title"] = "Mẫu xe"; }
+<div class="row g-3">
+    <div class="col-lg-4"><div class="card"><div class="card-body">
+        <h6 class="fw-bold mb-3">Thêm mẫu xe</h6>
+        <form asp-action="Create" method="post">@Html.AntiForgeryToken()
+            <div class="mb-2"><input name="name" class="form-control" placeholder="Tên mẫu (Hyundai...) *" required /></div>
+            <div class="mb-2"><input name="variant" class="form-control" placeholder="Phiên bản" /></div>
+            <div class="row g-2 mb-2">
+                <div class="col-6"><input name="code" class="form-control" placeholder="Mã (tự sinh)" /></div>
+                <div class="col-6"><input name="color" class="form-control" placeholder="Màu" /></div>
+            </div>
+            <div class="mb-3"><input name="listPrice" type="number" step="1000000" class="form-control" placeholder="Giá niêm yết" /></div>
+            <button class="btn btn-primary w-100"><i class="bi bi-plus-lg me-1"></i>Thêm</button>
+        </form>
+    </div></div></div>
+    <div class="col-lg-8"><div class="card"><div class="card-body">
+        <table class="table table-hover align-middle"><thead><tr><th>Mã</th><th>Mẫu xe</th><th>Phiên bản</th><th>Màu</th><th class="text-end">Giá niêm yết</th></tr></thead><tbody>
+        @foreach (var m in Model) { <tr><td class="fw-semibold">@m.Code</td><td>@m.Name</td><td class="small text-muted">@m.Variant</td><td>@m.Color</td><td class="text-end">@m.ListPrice.ToString("N0")</td></tr> }
+        @if (Model.Count == 0) { <tr><td colspan="5" class="text-center text-muted py-4">Chưa có mẫu xe.</td></tr> }
+        </tbody></table>
+    </div></div></div>
+</div>

@@ -1,0 +1,106 @@
+@model Lead
+@{
+    ViewData["Title"] = $"Lead {Model.Code}";
+    var (stTxt, stCss) = Ui.Stage(Model.Stage);
+    var models = (List<VehicleModel>)ViewBag.Models;
+    bool active = Model.Stage is not (LeadStage.Delivered or LeadStage.Lost);
+}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card mb-3"><div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="fw-bold mb-1">@Model.Name <span class="badge bg-@stCss ms-1">@stTxt</span></h5>
+                    <div class="text-muted small"><i class="bi bi-telephone me-1"></i>@Model.Phone @if (Model.Email != null) { <span>· @Model.Email</span> } · @Ui.Source(Model.Source)</div>
+                    <div class="small mt-1">Xe quan tâm: <b>@(Model.Model?.Name ?? "—")</b> · Sale: <b>@(Model.SalesPerson ?? "—")</b></div>
+                    @if (!string.IsNullOrEmpty(Model.Note)) { <div class="small text-muted mt-1">@Model.Note</div> }
+                </div>
+            </div>
+        </div></div>
+
+        <div class="card mb-3"><div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold mb-0"><i class="bi bi-speedometer me-2"></i>Lịch lái thử</h6></div>
+            @foreach (var td in Model.TestDrives.OrderByDescending(t => t.ScheduledAt))
+            {
+                var (tt, tcss) = Ui.TD(td.Status);
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div><b>@td.Model.Name</b> <span class="text-muted small">· @td.ScheduledAt.ToString("HH:mm dd/MM/yyyy")</span> <span class="badge bg-@tcss ms-1">@tt</span></div>
+                    @if (td.Status == TestDriveStatus.Scheduled)
+                    {
+                        <div class="d-flex gap-1">
+                            @foreach (var (st, lbl) in new[] { (TestDriveStatus.Done, "Xong"), (TestDriveStatus.NoShow, "Vắng"), (TestDriveStatus.Cancelled, "Hủy") })
+                            {
+                                <form asp-action="SetTd" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="tdId" value="@td.Id" /><input type="hidden" name="status" value="@((int)st)" /><button class="btn btn-sm btn-outline-secondary py-0">@lbl</button></form>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            @if (Model.TestDrives.Count == 0) { <div class="text-muted small py-1">Chưa có lịch lái thử.</div> }
+            @if (active)
+            {
+                <form asp-action="BookTestDrive" method="post" class="row g-2 mt-2">
+                    @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" />
+                    <div class="col-md-5"><select name="modelId" class="form-select form-select-sm" required><option value="">Chọn xe lái thử</option>@foreach (var m in models) { <option value="@m.Id" selected="@(Model.ModelId==m.Id)">@m.Name</option> }</select></div>
+                    <div class="col-md-5"><input name="scheduledAt" type="datetime-local" class="form-control form-control-sm" /></div>
+                    <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">Đặt lịch</button></div>
+                </form>
+            }
+        </div></div>
+
+        <div class="card"><div class="card-body">
+            <h6 class="fw-bold mb-2"><i class="bi bi-cash-coin me-2"></i>Thương vụ</h6>
+            @foreach (var dl in Model.Deals.OrderByDescending(x => x.CreatedAt))
+            {
+                var (dt, dcss) = Ui.Deal(dl.Status);
+                <div class="border rounded p-2 mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div><b>@dl.Code</b> · @dl.Model.Name <span class="badge bg-@dcss ms-1">@dt</span>
+                            <div class="small text-muted">Giá @dl.FinalPrice.ToString("N0")đ (CK @dl.Discount.ToString("N0")) · Cọc @dl.DepositAmount.ToString("N0") · Còn @dl.Remaining.ToString("N0")</div>
+                        </div>
+                        <div class="d-flex gap-1">
+                            @if (dl.Status == DealStatus.Quoted) { <form asp-action="DealAction" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="dealId" value="@dl.Id" /><input type="hidden" name="to" value="1" /><button class="btn btn-sm btn-warning">Đặt cọc</button></form> }
+                            @if (dl.Status == DealStatus.Deposited) { <form asp-action="DealAction" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="dealId" value="@dl.Id" /><input type="hidden" name="to" value="2" /><button class="btn btn-sm btn-success">Giao xe</button></form> }
+                            @if (dl.Status is DealStatus.Quoted or DealStatus.Deposited) { <form asp-action="DealAction" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="dealId" value="@dl.Id" /><input type="hidden" name="to" value="3" /><button class="btn btn-sm btn-outline-danger">Hủy</button></form> }
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (active)
+            {
+                <form asp-action="CreateDeal" method="post" class="row g-2 mt-1">
+                    @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" />
+                    <div class="col-md-4"><select name="modelId" class="form-select form-select-sm" required onchange="var p=this.options[this.selectedIndex].dataset.price; if(p) document.getElementById('dprice').value=p;"><option value="">Chọn xe</option>@foreach (var m in models) { <option value="@m.Id" data-price="@m.ListPrice" selected="@(Model.ModelId==m.Id)">@m.Name</option> }</select></div>
+                    <div class="col-md-3"><input id="dprice" name="price" type="number" step="1000000" class="form-control form-control-sm" placeholder="Giá bán" /></div>
+                    <div class="col-md-2"><input name="discount" type="number" step="100000" value="0" class="form-control form-control-sm" placeholder="Chiết khấu" /></div>
+                    <div class="col-md-2"><input name="depositAmount" type="number" step="1000000" value="0" class="form-control form-control-sm" placeholder="Cọc" /></div>
+                    <div class="col-md-1"><button class="btn btn-sm btn-primary w-100"><i class="bi bi-plus"></i></button></div>
+                </form>
+            }
+        </div></div>
+    </div>
+
+    <div class="col-lg-4"><div class="card"><div class="card-body">
+        <h6 class="fw-bold mb-3">Giai đoạn phễu</h6>
+        @{ var order = new[] { LeadStage.New, LeadStage.Contacted, LeadStage.TestDriven, LeadStage.Quoted, LeadStage.Deposited, LeadStage.Delivered }; }
+        <div class="mb-3">
+        @foreach (var s in order)
+        {
+            var done = (int)Model.Stage >= (int)s && Model.Stage != LeadStage.Lost;
+            var (t, _) = Ui.Stage(s);
+            <div class="d-flex align-items-center mb-1"><i class="bi @(done ? "bi-check-circle-fill text-success" : "bi-circle text-muted") me-2"></i><span class="@(Model.Stage==s ? "fw-bold" : "")">@t</span></div>
+        }
+        </div>
+        @if (active)
+        {
+            <div class="small text-muted mb-1">Chuyển nhanh:</div>
+            @foreach (var s in order)
+            {
+                if ((int)s <= (int)Model.Stage) { continue; }
+                <form asp-action="Advance" method="post" class="mb-1">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="to" value="@((int)s)" /><button class="btn btn-sm btn-outline-primary w-100">→ @Ui.Stage(s).text</button></form>
+            }
+            <form asp-action="Advance" method="post" class="mt-2">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="to" value="6" /><button class="btn btn-sm btn-outline-danger w-100">✕ Đánh dấu mất khách</button></form>
+        }
+        else { <div class="alert alert-secondary small mb-0">Lead đã @(Model.Stage == LeadStage.Delivered ? "chốt (giao xe)" : "mất").</div> }
+    </div></div></div>
+</div>
