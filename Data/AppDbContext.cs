@@ -39,10 +39,11 @@ public class AppDbContext : DbContext
         b.Entity<Deal>(e =>
         {
             e.HasIndex(x => new { x.OrgId, x.Code }).IsUnique();
-            e.Property(x => x.Price).HasPrecision(18, 2);
-            e.Property(x => x.Discount).HasPrecision(18, 2);
-            e.Property(x => x.DepositAmount).HasPrecision(18, 2);
-            e.Ignore(x => x.FinalPrice); e.Ignore(x => x.Remaining);
+            foreach (var p in new[] { nameof(Deal.Price), nameof(Deal.Discount), nameof(Deal.DepositAmount),
+                nameof(Deal.VatAmount), nameof(Deal.RegistrationFee), nameof(Deal.PlateFee),
+                nameof(Deal.InsuranceAmount), nameof(Deal.AccessoriesAmount), nameof(Deal.LoanAmount) })
+                e.Property(p).HasPrecision(18, 2);
+            e.Ignore(x => x.FinalPrice); e.Ignore(x => x.Remaining); e.Ignore(x => x.TotalPayable);
             e.HasOne(x => x.Lead).WithMany(x => x.Deals).HasForeignKey(x => x.LeadId);
             e.HasOne(x => x.Model).WithMany().HasForeignKey(x => x.ModelId).OnDelete(DeleteBehavior.Restrict);
             e.HasQueryFilter(x => x.OrgId == _orgId);

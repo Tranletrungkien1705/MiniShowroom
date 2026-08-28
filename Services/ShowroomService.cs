@@ -19,7 +19,9 @@ public interface IShowroomService
     Task SetTestDriveStatusAsync(int id, TestDriveStatus st);
     Task<int> CreateDealAsync(Deal d);
     Task<(bool ok, string msg)> DealActionAsync(int dealId, DealStatus to);
+    Task<(bool ok, string msg)> AssignVehicleAsync(int dealId, string? vin, string? engineNo, string? chassisNo, string? color, string? plate);
     Task<List<Deal>> DealsAsync(DealStatus? status);
+    Task<Deal?> GetDealAsync(int id);
     Task<ShowDash> DashboardAsync();
 }
 
@@ -109,11 +111,28 @@ public class ShowroomService(AppDbContext db) : IShowroomService
             _ => false
         };
         if (!ok) return (false, "Chuyển trạng thái không hợp lệ.");
+        // Nghiệp vụ: KHÔNG giao xe khi chưa gán định danh xe (VIN) — hồ sơ giao xe phải có số khung/số máy.
+        if (to == DealStatus.Delivered && string.IsNullOrWhiteSpace(d.Vin))
+            return (false, "Chưa gán xe (VIN) cho thương vụ — không thể giao.");
         d.Status = to;
         if (to == DealStatus.Deposited) { d.DepositAt = DateTime.Now; Bump(d.Lead, LeadStage.Deposited); }
         if (to == DealStatus.Delivered) { d.DeliveredAt = DateTime.Now; d.Lead.Stage = LeadStage.Delivered; }
         await db.SaveChangesAsync();
         return (true, to switch { DealStatus.Deposited => "Đã ghi nhận đặt cọc.", DealStatus.Delivered => "Đã giao xe — chốt deal!", _ => "Đã hủy thương vụ." });
+    }
+
+    // Gán định danh xe được giao (VIN/số máy/số khung/biển số) — chỉ khi đã cọc trở đi, chưa giao.
+    public async Task<(bool ok, string msg)> AssignVehicleAsync(int dealId, string? vin, string? engineNo, string? chassisNo, string? color, string? plate)
+    {
+        var d = await db.Deals.FirstOrDefaultAsync(x => x.Id == dealId);
+        if (d == null) return (false, "Không tìm thấy thương vụ.");
+        if (d.Status is DealStatus.Cancelled) return (false, "Thương vụ đã hủy.");
+        if (string.IsNullOrWhiteSpace(vin)) return (false, "Cần số VIN.");
+        d.Vin = vin.Trim(); d.EngineNo = engineNo; d.ChassisNo = chassisNo;
+        if (!string.IsNullOrWhiteSpace(color)) d.Color = color;
+        if (!string.IsNullOrWhiteSpace(plate)) d.LicensePlate = plate;
+        await db.SaveChangesAsync();
+        return (true, "Đã gán xe cho thương vụ.");
     }
 
     public async Task<List<Deal>> DealsAsync(DealStatus? status)
@@ -123,6 +142,9 @@ public class ShowroomService(AppDbContext db) : IShowroomService
         var list = await q.ToListAsync();
         return list.OrderByDescending(d => d.CreatedAt).ToList();
     }
+
+    public Task<Deal?> GetDealAsync(int id) =>
+        db.Deals.Include(d => d.Model).Include(d => d.Lead).FirstOrDefaultAsync(d => d.Id == id);
 
     public async Task<ShowDash> DashboardAsync()
     {
@@ -138,7 +160,7 @@ public class ShowroomService(AppDbContext db) : IShowroomService
             leads.Count(l => l.Stage is not (LeadStage.Delivered or LeadStage.Lost)),
             await db.TestDrives.CountAsync(t => t.ScheduledAt >= weekAgo),
             deals.Count(d => d.Status is DealStatus.Quoted or DealStatus.Deposited),
-            deals.Where(d => d.Status == DealStatus.Delivered && d.DeliveredAt >= monthStart).Sum(d => d.FinalPrice),
+            deals.Where(d => d.Status == DealStatus.Delivered && d.DeliveredAt >= monthStart).Sum(d => d.TotalPayable),
             funnel);
     }
 }
