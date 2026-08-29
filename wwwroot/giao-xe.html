@@ -127,14 +127,14 @@
   <p class="eyebrow">Fleet integration · MiniShowroom</p>
   <h1>Giao xe kích hoạt bảo hiểm &amp; thông báo</h1>
   <p class="lede">
-    Khi một thương vụ chuyển sang <b>Đã giao</b>, MiniShowroom tự bắn hai lời gọi HTTP
-    tới các dịch vụ khác trong fleet — lập bảo hiểm TNDS và gửi SMS — mà không chặn việc giao xe.
+    Khi một thương vụ chuyển sang <b>Đã giao</b>, MiniShowroom tự bắn ba lời gọi HTTP
+    tới các dịch vụ khác trong fleet — lập bảo hiểm TNDS, phát tem chính hãng, và gửi SMS — mà không chặn việc giao xe.
     Sơ đồ dưới cho thấy đúng cạnh nào phát sinh ở lần chuyển trạng thái đó, và dữ liệu nào chảy ngược về.
   </p>
 
   <figure>
-    <svg viewBox="0 0 920 470" role="img"
-         aria-label="Sơ đồ: state machine thương vụ Báo giá đến Đã cọc đến Đã giao; tại Đã giao phát sinh hai lời gọi HTTP tới MiniInsurance (/api/ext/auto-policy) và MiniNotify (/api/send), MiniInsurance trả InsurancePolicyCode ghi ngược vào Deal">
+    <svg viewBox="0 0 960 500" role="img"
+         aria-label="Sơ đồ: state machine thương vụ Báo giá đến Đã cọc đến Đã giao; tại Đã giao phát sinh ba lời gọi HTTP tới MiniInsurance (/api/ext/auto-policy), MiniStamp (/api/ext/vehicle-stamp) và MiniNotify (/api/send); MiniInsurance trả InsurancePolicyCode và MiniStamp trả WarrantyStampCode ghi ngược vào Deal">
       <defs>
         <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z"/>
@@ -147,12 +147,10 @@
       <!-- ===== Lifecycle rail ===== -->
       <text x="40" y="24" class="mono m" font-size="12" letter-spacing="1">DEAL STATE MACHINE</text>
 
-      <!-- Quoted -->
       <rect class="box" x="40" y="44" width="150" height="56" rx="10"/>
       <text x="115" y="70" text-anchor="middle" font-size="15" font-weight="600">Báo giá</text>
       <text x="115" y="88" text-anchor="middle" font-size="11.5" class="m mono">Quoted</text>
 
-      <!-- Deposited -->
       <rect class="box" x="250" y="44" width="150" height="56" rx="10"/>
       <text x="325" y="70" text-anchor="middle" font-size="15" font-weight="600">Đã cọc</text>
       <text x="325" y="88" text-anchor="middle" font-size="11.5" class="m mono">Deposited</text>
@@ -162,55 +160,68 @@
       <text x="540" y="70" text-anchor="middle" font-size="15" font-weight="700">Đã giao</text>
       <text x="540" y="88" text-anchor="middle" font-size="11.5" class="mono a">Delivered ●</text>
 
-      <!-- rail arrows -->
       <line class="edge" x1="192" y1="72" x2="246" y2="72" stroke-width="1.6" marker-end="url(#arw)"/>
       <line class="edge" x1="402" y1="72" x2="456" y2="72" stroke-width="1.6" marker-end="url(#arw)"/>
       <text x="219" y="38" text-anchor="middle" font-size="11" class="m">cọc</text>
       <text x="429" y="32" text-anchor="middle" font-size="11" class="m">gán VIN</text>
       <text x="429" y="45" text-anchor="middle" font-size="11" class="m">→ giao</text>
 
-      <!-- guard note under Delivered -->
       <text x="540" y="120" text-anchor="middle" font-size="11.5" class="w">⛔ backend chặn giao khi Deal chưa có VIN</text>
 
       <!-- ===== best-effort band ===== -->
-      <line class="rule" x1="40" y1="146" x2="880" y2="146" stroke-width="1" stroke-dasharray="2 4"/>
-      <text x="40" y="164" class="mono m" font-size="12" letter-spacing="1">ON Delivered — best-effort · try/catch · KHÔNG chặn giao xe</text>
+      <line class="rule" x1="40" y1="150" x2="920" y2="150" stroke-width="1" stroke-dasharray="2 4"/>
+      <text x="40" y="168" class="mono m" font-size="12" letter-spacing="1">ON Delivered — best-effort · mỗi call try/catch riêng · KHÔNG chặn giao xe</text>
 
-      <!-- downstream services -->
-      <rect class="box" x="120" y="322" width="270" height="88" rx="12"/>
-      <text x="142" y="352" font-size="15" font-weight="600">MiniInsurance</text>
-      <text x="142" y="374" font-size="12.5" class="m mono">lập BH TNDS bắt buộc</text>
-      <text x="142" y="393" font-size="12.5" class="m">premium = 0.15% × giá · hạn 1 năm</text>
+      <!-- ===== downstream services (3) ===== -->
+      <!-- MiniInsurance -->
+      <rect class="box" x="40" y="360" width="250" height="86" rx="12"/>
+      <text x="60" y="389" font-size="14.5" font-weight="600">MiniInsurance</text>
+      <text x="60" y="410" font-size="12" class="m mono">lập BH TNDS bắt buộc</text>
+      <text x="60" y="428" font-size="12" class="m">0.15% × giá · hạn 1 năm</text>
 
-      <rect class="box" x="600" y="322" width="240" height="88" rx="12"/>
-      <text x="622" y="352" font-size="15" font-weight="600">MiniNotify</text>
-      <text x="622" y="374" font-size="12.5" class="m mono">gửi kênh Sms</text>
-      <text x="622" y="393" font-size="12.5" class="m">SMS chúc mừng khách</text>
+      <!-- MiniStamp -->
+      <rect class="box" x="360" y="360" width="250" height="86" rx="12"/>
+      <text x="380" y="389" font-size="14.5" font-weight="600">MiniStamp</text>
+      <text x="380" y="410" font-size="12" class="m mono">tem QR chính hãng</text>
+      <text x="380" y="428" font-size="12" class="m">kích hoạt BH 36 tháng · LotNo = VIN</text>
 
-      <!-- call 1: Delivered -> MiniInsurance (accent, dashed) -->
-      <path class="edge-a" d="M496,102 C420,180 300,240 262,316"
+      <!-- MiniNotify -->
+      <rect class="box" x="680" y="360" width="240" height="86" rx="12"/>
+      <text x="700" y="389" font-size="14.5" font-weight="600">MiniNotify</text>
+      <text x="700" y="410" font-size="12" class="m mono">gửi kênh Sms</text>
+      <text x="700" y="428" font-size="12" class="m">SMS chúc mừng khách</text>
+
+      <!-- call 1: Delivered -> MiniInsurance (accent dashed) -->
+      <path class="edge-a" d="M494,102 C380,200 210,270 165,354"
             stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arwA)"/>
-      <text x="248" y="210" font-size="11.5" class="mono a">POST /api/ext/auto-policy</text>
-      <text x="248" y="226" font-size="11" class="m">plate · model · buyer · sumInsured</text>
-
-      <!-- write-back: MiniInsurance -> Deal.InsurancePolicyCode (accent solid) -->
-      <path class="edge-a" d="M352,324 C470,240 560,170 588,104"
+      <text x="150" y="212" font-size="11" class="mono a">POST /api/ext/auto-policy</text>
+      <!-- write-back insurance -->
+      <path class="edge-a" d="M250,362 C360,280 470,190 520,104"
             stroke-width="2" marker-end="url(#arwA)"/>
-      <text x="560" y="232" font-size="11.5" class="mono a" text-anchor="end">InsurancePolicyCode</text>
-      <text x="560" y="248" font-size="11" class="m" text-anchor="end">ghi ngược vào Deal → SPA · api/v1</text>
+      <text x="430" y="248" font-size="11" class="mono a" text-anchor="end">↰ InsurancePolicyCode</text>
 
-      <!-- call 2: Delivered -> MiniNotify (muted, dashed) -->
-      <path class="edge" d="M602,102 C670,190 710,250 718,316"
+      <!-- call 2: Delivered -> MiniStamp (accent dashed) -->
+      <path class="edge-a" d="M528,102 C500,190 490,270 485,354"
+            stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arwA)"/>
+      <text x="548" y="230" font-size="11" class="mono a">POST /api/ext/vehicle-stamp</text>
+      <!-- write-back stamp -->
+      <path class="edge-a" d="M600,360 C640,270 620,180 578,104"
+            stroke-width="2" marker-end="url(#arwA)"/>
+      <text x="648" y="250" font-size="11" class="mono a">↰ WarrantyStampCode</text>
+
+      <!-- call 3: Delivered -> MiniNotify (muted dashed) -->
+      <path class="edge" d="M604,102 C720,200 780,280 795,354"
             stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arw)"/>
-      <text x="734" y="210" font-size="11.5" class="mono m">POST /api/send</text>
+      <text x="812" y="212" font-size="11" class="mono m">POST /api/send</text>
 
-      <!-- result chip -->
-      <text x="142" y="436" font-size="12">↳ Policy <tspan class="mono a">HDBH2608-0005</tspan> (đã verify cloud)</text>
+      <!-- result chips -->
+      <text x="60" y="472" font-size="11.5">↳ <tspan class="mono a">HDBH2608-0004</tspan></text>
+      <text x="380" y="472" font-size="11.5">↳ tem <tspan class="mono a">E07B15E4…</tspan> · <tspan class="m">genuine ✓</tspan></text>
     </svg>
     <figcaption>
       Cạnh <b class="accent" style="color:var(--accent)">tô đậm</b> chỉ tồn tại ở lần chuyển <b>Deposited → Delivered</b>:
-      hai lời gọi ra ngoài (nét đứt) và một đường ghi ngược <code>InsurancePolicyCode</code> về lại thương vụ.
-      Cả hai lời gọi bọc <code>try/catch</code> — dịch vụ đích ngủ hay lỗi thì xe <b>vẫn giao</b>, chỉ thiếu số hợp đồng BH.
+      ba lời gọi ra ngoài (nét đứt) và hai đường ghi ngược — <code>InsurancePolicyCode</code>, <code>WarrantyStampCode</code> — về lại thương vụ.
+      Mỗi lời gọi bọc <code>try/catch</code> <b>độc lập</b>: một dịch vụ ngủ/lỗi thì xe <b>vẫn giao</b> và các nhánh còn lại vẫn chạy — chỉ thiếu đúng mẩu dữ liệu của nhánh đó.
     </figcaption>
   </figure>
 
@@ -222,8 +233,8 @@
     </div>
     <div class="card">
       <h3>Ghi ngược</h3>
-      <p>MiniInsurance trả <code>{ code }</code> → lưu vào <code>Deal.InsurancePolicyCode</code> (ALTER Postgres, lộ ra api/v1 + SPA).</p>
-      <p>Đây là dữ liệu duy nhất chảy ngược.</p>
+      <p>Hai mã trả về lưu vào <code>Deal.InsurancePolicyCode</code> và <code>Deal.WarrantyStampCode</code> (ALTER Postgres, lộ ra api/v1 + SPA).</p>
+      <p>SMS là fire-and-forget, không trả gì.</p>
     </div>
     <div class="card">
       <h3>Resilience</h3>
@@ -232,12 +243,12 @@
     </div>
     <div class="card">
       <h3>Verify · cloud</h3>
-      <p>Giao <code>DL2608-004</code> → policy <code>HDBH2608-0005</code>, tra lại khớp qua <code>/api/policy?plate=</code>.</p>
-      <p>11/11 unit test xanh.</p>
+      <p>Giao 1 xe → policy <code>HDBH…</code> + tem <code>WarrantyStampCode</code>; tra tem công khai trả <b>genuine ✓ "chính hãng"</b>.</p>
+      <p>11/11 unit test xanh (HttpClient stub).</p>
     </div>
   </div>
 
-  <p class="foot"><span class="ok">●</span> LIVE — minishowroom · miniinsurance · mininotify @ onrender.com</p>
+  <p class="foot"><span class="ok">●</span> LIVE — minishowroom · miniinsurance · ministamp · mininotify @ onrender.com</p>
 </div>
 </body>
 </html>
