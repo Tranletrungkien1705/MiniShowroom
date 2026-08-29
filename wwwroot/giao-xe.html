@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giao xe → Bảo hiểm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --bg: #f4f6f6;
+    --surface: #ffffff;
+    --ink: #16201f;
+    --muted: #5c6a68;
+    --line: #d3dbda;
+    --accent: #0d9488;
+    --accent-soft: #b8e6df;
+    --warn: #b45309;
+    --shadow: 0 1px 2px rgba(20,32,31,.06), 0 8px 24px rgba(20,32,31,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1413;
+      --surface: #141d1c;
+      --ink: #e6efed;
+      --muted: #93a5a2;
+      --line: #29403d;
+      --accent: #2dd4bf;
+      --accent-soft: #17423c;
+      --warn: #fbbf24;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1413;
+    --surface: #141d1c;
+    --ink: #e6efed;
+    --muted: #93a5a2;
+    --line: #29403d;
+    --accent: #2dd4bf;
+    --accent-soft: #17423c;
+    --warn: #fbbf24;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 56px 24px 80px; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 12px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 40px); font-weight: 700; letter-spacing: -.01em;
+    margin: 0 0 10px; text-wrap: balance;
+  }
+  .lede { font-size: 17px; color: var(--muted); margin: 0 0 40px; max-width: 62ch; }
+
+  figure {
+    margin: 0 0 44px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 16px;
+    padding: 28px 24px 20px; box-shadow: var(--shadow);
+  }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption {
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
+    font-size: 13.5px; color: var(--muted);
+  }
+  figcaption b { color: var(--ink); font-weight: 600; }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 18px 16px;
+  }
+  .card h3 {
+    margin: 0 0 8px; font-size: 12px; font-weight: 600;
+    font-family: "IBM Plex Mono", monospace; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  .card p { margin: 0; font-size: 14px; color: var(--ink); }
+  .card p + p { margin-top: 8px; color: var(--muted); }
+  code {
+    font-family: "IBM Plex Mono", monospace; font-size: .88em;
+    background: var(--accent-soft); color: var(--ink);
+    padding: 1px 5px; border-radius: 5px;
+  }
+  .foot {
+    margin-top: 40px; font-size: 13px; color: var(--muted);
+    font-family: "IBM Plex Mono", monospace;
+  }
+  .foot .ok { color: var(--accent); }
+
+  /* SVG styling (var() doesn't resolve in presentation attributes → use classes) */
+  figure svg text { fill: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+  figure svg .m { fill: var(--muted); }
+  figure svg .a { fill: var(--accent); }
+  figure svg .w { fill: var(--warn); }
+  figure svg .mono { font-family: "IBM Plex Mono", monospace; }
+  figure svg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+  figure svg .box-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+  figure svg .rule { stroke: var(--line); }
+  figure svg .edge { stroke: var(--muted); fill: none; }
+  figure svg .edge-a { stroke: var(--accent); fill: none; }
+  figure svg #arw path { fill: var(--muted); }
+  figure svg #arwA path { fill: var(--accent); }
+  .accent { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <p class="eyebrow">Fleet integration · MiniShowroom</p>
+  <h1>Giao xe kích hoạt bảo hiểm &amp; thông báo</h1>
+  <p class="lede">
+    Khi một thương vụ chuyển sang <b>Đã giao</b>, MiniShowroom tự bắn hai lời gọi HTTP
+    tới các dịch vụ khác trong fleet — lập bảo hiểm TNDS và gửi SMS — mà không chặn việc giao xe.
+    Sơ đồ dưới cho thấy đúng cạnh nào phát sinh ở lần chuyển trạng thái đó, và dữ liệu nào chảy ngược về.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 920 470" role="img"
+         aria-label="Sơ đồ: state machine thương vụ Báo giá đến Đã cọc đến Đã giao; tại Đã giao phát sinh hai lời gọi HTTP tới MiniInsurance (/api/ext/auto-policy) và MiniNotify (/api/send), MiniInsurance trả InsurancePolicyCode ghi ngược vào Deal">
+      <defs>
+        <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z"/>
+        </marker>
+        <marker id="arwA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z"/>
+        </marker>
+      </defs>
+
+      <!-- ===== Lifecycle rail ===== -->
+      <text x="40" y="24" class="mono m" font-size="12" letter-spacing="1">DEAL STATE MACHINE</text>
+
+      <!-- Quoted -->
+      <rect class="box" x="40" y="44" width="150" height="56" rx="10"/>
+      <text x="115" y="70" text-anchor="middle" font-size="15" font-weight="600">Báo giá</text>
+      <text x="115" y="88" text-anchor="middle" font-size="11.5" class="m mono">Quoted</text>
+
+      <!-- Deposited -->
+      <rect class="box" x="250" y="44" width="150" height="56" rx="10"/>
+      <text x="325" y="70" text-anchor="middle" font-size="15" font-weight="600">Đã cọc</text>
+      <text x="325" y="88" text-anchor="middle" font-size="11.5" class="m mono">Deposited</text>
+
+      <!-- Delivered (accent, the trigger) -->
+      <rect class="box-a" x="460" y="44" width="160" height="56" rx="10"/>
+      <text x="540" y="70" text-anchor="middle" font-size="15" font-weight="700">Đã giao</text>
+      <text x="540" y="88" text-anchor="middle" font-size="11.5" class="mono a">Delivered ●</text>
+
+      <!-- rail arrows -->
+      <line class="edge" x1="192" y1="72" x2="246" y2="72" stroke-width="1.6" marker-end="url(#arw)"/>
+      <line class="edge" x1="402" y1="72" x2="456" y2="72" stroke-width="1.6" marker-end="url(#arw)"/>
+      <text x="219" y="38" text-anchor="middle" font-size="11" class="m">cọc</text>
+      <text x="429" y="32" text-anchor="middle" font-size="11" class="m">gán VIN</text>
+      <text x="429" y="45" text-anchor="middle" font-size="11" class="m">→ giao</text>
+
+      <!-- guard note under Delivered -->
+      <text x="540" y="120" text-anchor="middle" font-size="11.5" class="w">⛔ backend chặn giao khi Deal chưa có VIN</text>
+
+      <!-- ===== best-effort band ===== -->
+      <line class="rule" x1="40" y1="146" x2="880" y2="146" stroke-width="1" stroke-dasharray="2 4"/>
+      <text x="40" y="164" class="mono m" font-size="12" letter-spacing="1">ON Delivered — best-effort · try/catch · KHÔNG chặn giao xe</text>
+
+      <!-- downstream services -->
+      <rect class="box" x="120" y="322" width="270" height="88" rx="12"/>
+      <text x="142" y="352" font-size="15" font-weight="600">MiniInsurance</text>
+      <text x="142" y="374" font-size="12.5" class="m mono">lập BH TNDS bắt buộc</text>
+      <text x="142" y="393" font-size="12.5" class="m">premium = 0.15% × giá · hạn 1 năm</text>
+
+      <rect class="box" x="600" y="322" width="240" height="88" rx="12"/>
+      <text x="622" y="352" font-size="15" font-weight="600">MiniNotify</text>
+      <text x="622" y="374" font-size="12.5" class="m mono">gửi kênh Sms</text>
+      <text x="622" y="393" font-size="12.5" class="m">SMS chúc mừng khách</text>
+
+      <!-- call 1: Delivered -> MiniInsurance (accent, dashed) -->
+      <path class="edge-a" d="M496,102 C420,180 300,240 262,316"
+            stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arwA)"/>
+      <text x="248" y="210" font-size="11.5" class="mono a">POST /api/ext/auto-policy</text>
+      <text x="248" y="226" font-size="11" class="m">plate · model · buyer · sumInsured</text>
+
+      <!-- write-back: MiniInsurance -> Deal.InsurancePolicyCode (accent solid) -->
+      <path class="edge-a" d="M352,324 C470,240 560,170 588,104"
+            stroke-width="2" marker-end="url(#arwA)"/>
+      <text x="560" y="232" font-size="11.5" class="mono a" text-anchor="end">InsurancePolicyCode</text>
+      <text x="560" y="248" font-size="11" class="m" text-anchor="end">ghi ngược vào Deal → SPA · api/v1</text>
+
+      <!-- call 2: Delivered -> MiniNotify (muted, dashed) -->
+      <path class="edge" d="M602,102 C670,190 710,250 718,316"
+            stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arw)"/>
+      <text x="734" y="210" font-size="11.5" class="mono m">POST /api/send</text>
+
+      <!-- result chip -->
+      <text x="142" y="436" font-size="12">↳ Policy <tspan class="mono a">HDBH2608-0005</tspan> (đã verify cloud)</text>
+    </svg>
+    <figcaption>
+      Cạnh <b class="accent" style="color:var(--accent)">tô đậm</b> chỉ tồn tại ở lần chuyển <b>Deposited → Delivered</b>:
+      hai lời gọi ra ngoài (nét đứt) và một đường ghi ngược <code>InsurancePolicyCode</code> về lại thương vụ.
+      Cả hai lời gọi bọc <code>try/catch</code> — dịch vụ đích ngủ hay lỗi thì xe <b>vẫn giao</b>, chỉ thiếu số hợp đồng BH.
+    </figcaption>
+  </figure>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Trigger</h3>
+      <p><code>ShowroomService.DealActionAsync</code> gọi <code>OnDeliveredAsync</code> ngay sau khi lưu trạng thái <b>Delivered</b>.</p>
+      <p>Chỉ chạy đúng một lần, ở đúng cạnh đó.</p>
+    </div>
+    <div class="card">
+      <h3>Ghi ngược</h3>
+      <p>MiniInsurance trả <code>{ code }</code> → lưu vào <code>Deal.InsurancePolicyCode</code> (ALTER Postgres, lộ ra api/v1 + SPA).</p>
+      <p>Đây là dữ liệu duy nhất chảy ngược.</p>
+    </div>
+    <div class="card">
+      <h3>Resilience</h3>
+      <p>Mỗi lời gọi bọc <code>try/catch</code>, timeout 12s, <code>IHttpClientFactory</code>. Lỗi mạng không lan ra người dùng.</p>
+      <p>Test dùng <code>StubHttpFactory</code> để không chạm mạng.</p>
+    </div>
+    <div class="card">
+      <h3>Verify · cloud</h3>
+      <p>Giao <code>DL2608-004</code> → policy <code>HDBH2608-0005</code>, tra lại khớp qua <code>/api/policy?plate=</code>.</p>
+      <p>11/11 unit test xanh.</p>
+    </div>
+  </div>
+
+  <p class="foot"><span class="ok">●</span> LIVE — minishowroom · miniinsurance · mininotify @ onrender.com</p>
+</div>
+</body>
+</html>
