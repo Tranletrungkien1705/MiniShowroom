@@ -172,7 +172,7 @@ public class ApiV1Controller(IShowroomService svc, ICache cache, ITenantContext 
         d.Vin, d.EngineNo, d.ChassisNo, d.Color, d.LicensePlate,
         d.BuyerName, d.BuyerIdNo, d.BuyerPhone, d.BuyerAddress, d.SalesPerson,
         (int)d.Status, Ui.Deal(d.Status).text, Ui.Deal(d.Status).css, d.CreatedAt, d.DepositAt, d.ExpectedDelivery, d.DeliveredAt,
-        d.InsurancePolicyCode);
+        d.InsurancePolicyCode, d.WarrantyStampCode);
 }
 
 // ───────────────────────── DTOs & request records ─────────────────────────
@@ -191,7 +191,7 @@ public record DealDto(int Id, string Code, int LeadId, string? LeadName, int Mod
     string? Vin, string? EngineNo, string? ChassisNo, string? Color, string? LicensePlate,
     string? BuyerName, string? BuyerIdNo, string? BuyerPhone, string? BuyerAddress, string? SalesPerson,
     int Status, string StatusText, string StatusCss, DateTime CreatedAt, DateTime? DepositAt, DateTime? ExpectedDelivery, DateTime? DeliveredAt,
-    string? InsurancePolicyCode);
+    string? InsurancePolicyCode, string? WarrantyStampCode);
 public record LeadDetailDto(LeadDto Lead, List<TestDriveDto> TestDrives, List<DealDto> Deals);
 
 // Request DTO = class có get/set (System.Text.Json bind ổn định hơn positional record cho body phức tạp).

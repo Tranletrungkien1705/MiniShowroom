@@ -329,6 +329,7 @@ function DealDetail({ id, onClose, onChanged }) {
         {d.vin && <><dt>VIN</dt><dd>{d.vin}</dd><dt>Số máy / khung</dt><dd>{d.engineNo} / {d.chassisNo}</dd><dt>Biển số</dt><dd>{d.licensePlate || '—'}</dd></>}
         {d.deliveredAt && <><dt>Đã giao</dt><dd>{fmtDateTime(d.deliveredAt)}</dd></>}
         {d.insurancePolicyCode && <><dt>Bảo hiểm TNDS</dt><dd>{d.insurancePolicyCode} <span className="muted" style={{ fontSize: 11 }}>(tự lập qua MiniInsurance)</span></dd></>}
+        {d.warrantyStampCode && <><dt>Tem chính hãng</dt><dd>{d.warrantyStampCode} <span className="muted" style={{ fontSize: 11 }}>(tem QR + kích hoạt BH qua MiniStamp)</span></dd></>}
       </dl>
       <div className="section-t">Thao tác</div>
       <div className="row" style={{ gap: 6 }}>

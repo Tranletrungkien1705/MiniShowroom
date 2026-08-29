@@ -31,6 +31,7 @@ public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : 
     // Tích hợp fleet: khi giao xe → tự lập BH TNDS (MiniInsurance) + gửi thông báo (MiniNotify). Best-effort, không chặn giao xe.
     private static string InsuranceUrl => Environment.GetEnvironmentVariable("MINIINSURANCE_URL") ?? "https://miniinsurance.onrender.com";
     private static string NotifyUrl => Environment.GetEnvironmentVariable("MININOTIFY_URL") ?? "https://mininotify.onrender.com";
+    private static string StampUrl => Environment.GetEnvironmentVariable("MINISTAMP_URL") ?? "https://ministamp.onrender.com";
 
     private async Task OnDeliveredAsync(Deal d)
     {
@@ -52,6 +53,19 @@ public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : 
         catch { /* best-effort */ }
         try
         {
+            var res = await http.PostAsJsonAsync($"{StampUrl}/api/ext/vehicle-stamp", new
+            {
+                vehicleModel = d.Model?.Name, vin = d.Vin, plate = d.LicensePlate, buyerPhone = d.BuyerPhone
+            });
+            if (res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadFromJsonAsync<VehicleStampResult>();
+                if (body?.qrId is { } qr) { d.WarrantyStampCode = qr; await db.SaveChangesAsync(); }
+            }
+        }
+        catch { /* best-effort */ }
+        try
+        {
             await http.PostAsJsonAsync($"{NotifyUrl}/api/send", new
             {
                 channel = "Sms", to = d.BuyerPhone ?? "", subject = "",
@@ -62,6 +76,7 @@ public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : 
     }
 
     private sealed record AutoPolicyResult(int policyId, string code, string insurer, decimal premium);
+    private sealed record VehicleStampResult(string qrId, string pin, string product, string? warrantyEnd, string? verifyUrl);
 
     public Task<List<VehicleModel>> ModelsAsync(bool activeOnly = false) =>
         (activeOnly ? db.Models.Where(m => m.IsActive) : db.Models).OrderBy(m => m.Name).ToListAsync();

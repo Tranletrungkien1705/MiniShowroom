@@ -109,6 +109,7 @@ public static class Seeder
             Add("Deals", c, "text");
         Add("Deals", "ExpectedDelivery", "timestamp");
         Add("Deals", "InsurancePolicyCode", "text");   // tích hợp MiniInsurance
+        Add("Deals", "WarrantyStampCode", "text");     // tích hợp MiniStamp
 
         foreach (var s in sql) try { await db.Database.ExecuteSqlRawAsync(s); } catch { }
     }
