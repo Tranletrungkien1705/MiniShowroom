@@ -32,6 +32,7 @@ public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : 
     private static string InsuranceUrl => Environment.GetEnvironmentVariable("MINIINSURANCE_URL") ?? "https://miniinsurance.onrender.com";
     private static string NotifyUrl => Environment.GetEnvironmentVariable("MININOTIFY_URL") ?? "https://mininotify.onrender.com";
     private static string StampUrl => Environment.GetEnvironmentVariable("MINISTAMP_URL") ?? "https://ministamp.onrender.com";
+    private static string LoyaltyUrl => Environment.GetEnvironmentVariable("MINILOYALTY_URL") ?? "https://miniloyalty-pj9w.onrender.com";
 
     private async Task OnDeliveredAsync(Deal d)
     {
@@ -73,10 +74,29 @@ public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : 
             });
         }
         catch { /* best-effort */ }
+        try
+        {
+            // Mua xe → tự vào hội viên + tích điểm theo giá xe (MiniLoyalty).
+            var res = await http.PostAsJsonAsync($"{LoyaltyUrl}/api/ext/auto-earn", new
+            {
+                phone = d.BuyerPhone, name = d.BuyerName, amount = d.FinalPrice, refNo = d.Code
+            });
+            if (res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadFromJsonAsync<AutoEarnResult>();
+                if (body?.memberCode is { } mc)
+                {
+                    d.LoyaltyInfo = $"{mc} +{body.earned:N0}đ → {body.balance:N0}đ ({body.rank}){(body.enrolled ? " • hội viên mới" : "")}";
+                    await db.SaveChangesAsync();
+                }
+            }
+        }
+        catch { /* best-effort */ }
     }
 
     private sealed record AutoPolicyResult(int policyId, string code, string insurer, decimal premium);
     private sealed record VehicleStampResult(string qrId, string pin, string product, string? warrantyEnd, string? verifyUrl);
+    private sealed record AutoEarnResult(string memberCode, bool enrolled, int earned, int balance, string? rank);
 
     public Task<List<VehicleModel>> ModelsAsync(bool activeOnly = false) =>
         (activeOnly ? db.Models.Where(m => m.IsActive) : db.Models).OrderBy(m => m.Name).ToListAsync();

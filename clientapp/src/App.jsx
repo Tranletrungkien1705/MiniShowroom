@@ -330,6 +330,7 @@ function DealDetail({ id, onClose, onChanged }) {
         {d.deliveredAt && <><dt>Đã giao</dt><dd>{fmtDateTime(d.deliveredAt)}</dd></>}
         {d.insurancePolicyCode && <><dt>Bảo hiểm TNDS</dt><dd>{d.insurancePolicyCode} <span className="muted" style={{ fontSize: 11 }}>(tự lập qua MiniInsurance)</span></dd></>}
         {d.warrantyStampCode && <><dt>Tem chính hãng</dt><dd>{d.warrantyStampCode} <span className="muted" style={{ fontSize: 11 }}>(tem QR + kích hoạt BH qua MiniStamp)</span></dd></>}
+        {d.loyaltyInfo && <><dt>Điểm thưởng</dt><dd>{d.loyaltyInfo} <span className="muted" style={{ fontSize: 11 }}>(MiniLoyalty)</span></dd></>}
       </dl>
       <div className="section-t">Thao tác</div>
       <div className="row" style={{ gap: 6 }}>

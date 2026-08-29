@@ -124,6 +124,7 @@ public class Deal : IOrgOwned
     public DateTime? DeliveredAt { get; set; }
     public string? InsurancePolicyCode { get; set; }  // mã BH TNDS tự lập khi giao xe (tích hợp MiniInsurance)
     public string? WarrantyStampCode { get; set; }    // mã tem QR chính hãng + kích hoạt BH khi giao xe (tích hợp MiniStamp)
+    public string? LoyaltyInfo { get; set; }          // điểm thưởng khách hàng thân thiết khi mua xe (tích hợp MiniLoyalty)
 
     public Lead Lead { get; set; } = null!;
     public VehicleModel Model { get; set; } = null!;
