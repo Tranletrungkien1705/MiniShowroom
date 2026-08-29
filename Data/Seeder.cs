@@ -108,6 +108,7 @@ public static class Seeder
         foreach (var c in new[] { "BankName", "Vin", "EngineNo", "ChassisNo", "Color", "LicensePlate", "BuyerName", "BuyerIdNo", "BuyerPhone", "BuyerAddress", "SalesPerson" })
             Add("Deals", c, "text");
         Add("Deals", "ExpectedDelivery", "timestamp");
+        Add("Deals", "InsurancePolicyCode", "text");   // tích hợp MiniInsurance
 
         foreach (var s in sql) try { await db.Database.ExecuteSqlRawAsync(s); } catch { }
     }

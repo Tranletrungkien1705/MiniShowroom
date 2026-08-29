@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 });
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IShowroomService, ShowroomService>();
+builder.Services.AddHttpClient();   // gọi MiniInsurance/MiniNotify khi giao xe
 builder.Services.AddFleetObs();
 builder.Services.AddControllersWithViews();
 

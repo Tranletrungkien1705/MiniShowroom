@@ -122,6 +122,7 @@ public class Deal : IOrgOwned
     public DateTime? DepositAt { get; set; }
     public DateTime? ExpectedDelivery { get; set; }   // ngày hẹn giao
     public DateTime? DeliveredAt { get; set; }
+    public string? InsurancePolicyCode { get; set; }  // mã BH TNDS tự lập khi giao xe (tích hợp MiniInsurance)
 
     public Lead Lead { get; set; } = null!;
     public VehicleModel Model { get; set; } = null!;

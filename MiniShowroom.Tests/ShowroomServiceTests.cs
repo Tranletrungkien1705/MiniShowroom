@@ -22,7 +22,18 @@ public class ShowroomServiceTests
         var tenant = new TenantContext { OrgId = TenantContext.DefaultOrgId };
         var db = new AppDbContext(opt, tenant);
         db.Database.EnsureCreated();
-        return (db, new ShowroomService(db), conn);
+        return (db, new ShowroomService(db, new StubHttpFactory()), conn);
+    }
+
+    // Factory trả HttpClient fail ngay lập tức — tích hợp fleet khi giao xe là best-effort, test không chạm mạng.
+    private sealed class StubHttpFactory : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new(new FailHandler());
+        private sealed class FailHandler : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage r, CancellationToken c)
+                => throw new HttpRequestException("stub: no network in tests");
+        }
     }
 
     private static async Task<(int leadId, int modelId)> SeedLeadModel(AppDbContext db, IShowroomService svc)

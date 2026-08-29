@@ -328,6 +328,7 @@ function DealDetail({ id, onClose, onChanged }) {
         <dt>Hẹn giao</dt><dd>{fmtDate(d.expectedDelivery)}</dd>
         {d.vin && <><dt>VIN</dt><dd>{d.vin}</dd><dt>Số máy / khung</dt><dd>{d.engineNo} / {d.chassisNo}</dd><dt>Biển số</dt><dd>{d.licensePlate || '—'}</dd></>}
         {d.deliveredAt && <><dt>Đã giao</dt><dd>{fmtDateTime(d.deliveredAt)}</dd></>}
+        {d.insurancePolicyCode && <><dt>Bảo hiểm TNDS</dt><dd>{d.insurancePolicyCode} <span className="muted" style={{ fontSize: 11 }}>(tự lập qua MiniInsurance)</span></dd></>}
       </dl>
       <div className="section-t">Thao tác</div>
       <div className="row" style={{ gap: 6 }}>

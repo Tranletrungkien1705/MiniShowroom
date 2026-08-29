@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using MiniShowroom.Data;
 using MiniShowroom.Models;
@@ -25,8 +26,43 @@ public interface IShowroomService
     Task<ShowDash> DashboardAsync();
 }
 
-public class ShowroomService(AppDbContext db) : IShowroomService
+public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : IShowroomService
 {
+    // Tích hợp fleet: khi giao xe → tự lập BH TNDS (MiniInsurance) + gửi thông báo (MiniNotify). Best-effort, không chặn giao xe.
+    private static string InsuranceUrl => Environment.GetEnvironmentVariable("MINIINSURANCE_URL") ?? "https://miniinsurance.onrender.com";
+    private static string NotifyUrl => Environment.GetEnvironmentVariable("MININOTIFY_URL") ?? "https://mininotify.onrender.com";
+
+    private async Task OnDeliveredAsync(Deal d)
+    {
+        var http = httpFactory.CreateClient();
+        http.Timeout = TimeSpan.FromSeconds(12);
+        try
+        {
+            var res = await http.PostAsJsonAsync($"{InsuranceUrl}/api/ext/auto-policy", new
+            {
+                plate = d.LicensePlate ?? d.Vin ?? d.Code, vehicleModel = d.Model?.Name,
+                customerName = d.BuyerName, customerPhone = d.BuyerPhone, sumInsured = d.Price
+            });
+            if (res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadFromJsonAsync<AutoPolicyResult>();
+                if (body?.code is { } code) { d.InsurancePolicyCode = code; await db.SaveChangesAsync(); }
+            }
+        }
+        catch { /* best-effort */ }
+        try
+        {
+            await http.PostAsJsonAsync($"{NotifyUrl}/api/send", new
+            {
+                channel = "Sms", to = d.BuyerPhone ?? "", subject = "",
+                body = $"Chuc mung {d.BuyerName} da nhan xe {d.Model?.Name} (HD {d.Code}). BH TNDS: {d.InsurancePolicyCode ?? "dang lap"}."
+            });
+        }
+        catch { /* best-effort */ }
+    }
+
+    private sealed record AutoPolicyResult(int policyId, string code, string insurer, decimal premium);
+
     public Task<List<VehicleModel>> ModelsAsync(bool activeOnly = false) =>
         (activeOnly ? db.Models.Where(m => m.IsActive) : db.Models).OrderBy(m => m.Name).ToListAsync();
 
@@ -100,7 +136,7 @@ public class ShowroomService(AppDbContext db) : IShowroomService
 
     public async Task<(bool ok, string msg)> DealActionAsync(int dealId, DealStatus to)
     {
-        var d = await db.Deals.Include(x => x.Lead).FirstOrDefaultAsync(x => x.Id == dealId);
+        var d = await db.Deals.Include(x => x.Lead).Include(x => x.Model).FirstOrDefaultAsync(x => x.Id == dealId);
         if (d == null) return (false, "Không tìm thấy thương vụ.");
         // luồng: Quoted → Deposited → Delivered; hủy bất kỳ khi chưa giao.
         bool ok = to switch
@@ -118,6 +154,7 @@ public class ShowroomService(AppDbContext db) : IShowroomService
         if (to == DealStatus.Deposited) { d.DepositAt = DateTime.Now; Bump(d.Lead, LeadStage.Deposited); }
         if (to == DealStatus.Delivered) { d.DeliveredAt = DateTime.Now; d.Lead.Stage = LeadStage.Delivered; }
         await db.SaveChangesAsync();
+        if (to == DealStatus.Delivered) await OnDeliveredAsync(d);   // tích hợp fleet: lập BH + thông báo (best-effort)
         return (true, to switch { DealStatus.Deposited => "Đã ghi nhận đặt cọc.", DealStatus.Delivered => "Đã giao xe — chốt deal!", _ => "Đã hủy thương vụ." });
     }
 
