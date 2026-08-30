@@ -1,9 +1,14 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MiniShowroom.Data;
 using MiniShowroom.Models;
 using MiniShowroom.Services;
 using Serilog;
 
+JwtSecurityTokenHandler.DefaultMapInboundClaims = false;   // giữ claim gốc từ MiniSSO
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 FleetObs.ConfigureLogger("minishowroom");
 
@@ -21,6 +26,19 @@ builder.Services.AddDbContext<AppDbContext>(o =>
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IShowroomService, ShowroomService>();
 builder.Services.AddHttpClient();   // gọi MiniInsurance/MiniNotify khi giao xe
+// SSO chung: tin token MiniSSO (OIDC RS256).
+var ssoAuthority = Environment.GetEnvironmentVariable("SSO_AUTHORITY") ?? "https://minisso.onrender.com";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(o =>
+{
+    o.Authority = ssoAuthority;
+    o.RequireHttpsMetadata = ssoAuthority.StartsWith("https");
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true, ValidIssuer = ssoAuthority,
+        ValidateAudience = false, ValidateLifetime = true, NameClaimType = "name", RoleClaimType = "role"
+    };
+});
+builder.Services.AddAuthorization();
 builder.Services.AddFleetObs();
 builder.Services.AddControllersWithViews();
 
@@ -29,6 +47,17 @@ using (var scope = app.Services.CreateScope())
     await Seeder.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>());
 
 app.UseFleetObs();
+app.UseAuthentication();
+app.UseAuthorization();
+
+// SSO chung: endpoint xác thực bằng token MiniSSO.
+app.MapGet("/api/whoami", (ClaimsPrincipal u) => Results.Ok(new
+{
+    app = "minishowroom",
+    sub = u.FindFirst("sub")?.Value, name = u.Identity?.Name ?? u.FindFirst("name")?.Value,
+    email = u.FindFirst("email")?.Value, tenant = u.FindFirst("tenant")?.Value,
+    roles = u.FindAll("role").Select(c => c.Value)
+})).RequireAuthorization();
 
 app.Use(async (ctx, next) =>
 {
