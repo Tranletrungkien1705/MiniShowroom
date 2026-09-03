@@ -96,8 +96,30 @@ app.MapPost("/api/orgs/register", async (RegisterOrgDto dto, AppDbContext db) =>
     return Results.Ok(new { orgId = org.Id, apiKey = org.ApiKey });
 });
 
+// Import hàng loạt model xe thật từ Mst_CarModel (SQL nguồn 2010.HTC). Dedupe theo Code.
+app.MapPost("/api/import/models", async (List<ImportModelDto> rows, AppDbContext db) =>
+{
+    if (rows is null || rows.Count == 0) return Results.BadRequest(new { error = "Không có dữ liệu import." });
+    int added = 0, skipped = 0;
+    foreach (var r in rows)
+    {
+        if (string.IsNullOrWhiteSpace(r.ModelCode) || string.IsNullOrWhiteSpace(r.ModelName)) { skipped++; continue; }
+        var code = r.ModelCode.Trim();
+        if (await db.Models.AnyAsync(m => m.Code == code)) { skipped++; continue; }
+        db.Models.Add(new VehicleModel
+        {
+            Code = code, Name = r.ModelName.Trim(), Segment = r.SegmentType,
+            IsActive = r.FlagActive != "0", WarrantyMonths = 36
+        });
+        added++;
+    }
+    await db.SaveChangesAsync();
+    return Results.Ok(new { added, skipped, total = rows.Count });
+});
+
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 app.Run();
 
 record RegisterOrgDto(string Name);
+record ImportModelDto(string? ModelCode, string? ModelName, string? SegmentType, string? FlagActive);
 record LeadDto(string Name, string Phone, string? Email, string? ModelCode, string? Note);
