@@ -90,12 +90,16 @@ public class ApiV1Controller(IShowroomService svc, ICache cache, ITenantContext 
     [HttpPost("testdrives")]
     public async Task<IActionResult> BookTestDrive([FromBody] TestDriveReq r)
     {
-        var id = await svc.BookTestDriveAsync(new TestDrive
+        try
         {
-            LeadId = r.LeadId, ModelId = r.ModelId,
-            ScheduledAt = r.ScheduledAt == default ? DateTime.Now.AddDays(1) : r.ScheduledAt, Note = r.Note
-        });
-        return Ok(new { id });
+            var id = await svc.BookTestDriveAsync(new TestDrive
+            {
+                LeadId = r.LeadId, ModelId = r.ModelId,
+                ScheduledAt = r.ScheduledAt == default ? DateTime.Now.AddDays(1) : r.ScheduledAt, Note = r.Note
+            });
+            return Ok(new { id });
+        }
+        catch (KeyNotFoundException) { return BadRequest(new { error = "Lead không hợp lệ." }); }
     }
 
     [HttpPost("testdrives/{id:int}/status")]

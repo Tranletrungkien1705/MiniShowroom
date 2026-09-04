@@ -145,7 +145,10 @@ public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : 
 
     public async Task<int> BookTestDriveAsync(TestDrive td)
     {
-        var l = await db.Leads.FirstAsync(x => x.Id == td.LeadId);
+        // Controller (ApiV1Controller.BookTestDrive) KHÔNG validate LeadId trước khi gọi — FirstAsync ném exception
+        // không bắt được → 500 trống thay vì lỗi rõ ràng (đã xác nhận bug thật qua test sống LeadId không tồn tại).
+        var l = await db.Leads.FirstOrDefaultAsync(x => x.Id == td.LeadId)
+            ?? throw new KeyNotFoundException("Không tìm thấy lead.");
         db.TestDrives.Add(td);
         Bump(l, LeadStage.TestDriven);
         await db.SaveChangesAsync();
@@ -160,7 +163,8 @@ public class ShowroomService(AppDbContext db, IHttpClientFactory httpFactory) : 
 
     public async Task<int> CreateDealAsync(Deal d)
     {
-        var l = await db.Leads.FirstAsync(x => x.Id == d.LeadId);
+        var l = await db.Leads.FirstOrDefaultAsync(x => x.Id == d.LeadId)
+            ?? throw new KeyNotFoundException("Không tìm thấy lead.");
         d.Code = $"DL{DateTime.Now:yyMM}-{await db.Deals.CountAsync() + 1:D3}";
         d.Status = DealStatus.Quoted;
         db.Deals.Add(d);
